@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapport Phase 2 — Architecture &amp; Implémentation · LogEtd</title>
+<style>
+  :root{
+    --bleu-nuit:#1B2A4A;
+    --turquoise:#2AA6A0;
+    --orange:#E8833A;
+    --gris-clair:#F4F6F9;
+    --gris-texte:#3A4252;
+    --vert:#2E7D5B;
+    --rouge:#B3453A;
+    --bordure:#D8DEE8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--gris-texte);
+    background:#fff;
+    line-height:1.55;
+    font-size:15px;
+  }
+  header.cover{
+    background:linear-gradient(135deg,var(--bleu-nuit) 0%,#243A63 100%);
+    color:#fff;
+    padding:64px 48px 48px;
+  }
+  header.cover .kicker{
+    text-transform:uppercase;
+    letter-spacing:3px;
+    font-size:12px;
+    color:var(--turquoise);
+    font-weight:600;
+  }
+  header.cover h1{
+    font-size:34px;
+    margin:12px 0 8px;
+    font-weight:700;
+    line-height:1.2;
+  }
+  header.cover .sub{
+    font-size:17px;
+    opacity:.9;
+    max-width:760px;
+  }
+  header.cover .meta{
+    margin-top:28px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:28px;
+    font-size:13px;
+    opacity:.85;
+  }
+  header.cover .meta div span{
+    display:block;
+    color:var(--turquoise);
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    font-size:11px;
+  }
+  main{
+    max-width:980px;
+    margin:0 auto;
+    padding:0 48px 80px;
+  }
+  section{
+    margin-top:48px;
+    border-top:1px solid var(--bordure);
+    padding-top:32px;
+  }
+  section:first-of-type{border-top:none;}
+  h2{
+    font-size:24px;
+    color:var(--bleu-nuit);
+    margin:0 0 6px;
+    font-weight:700;
+  }
+  h2 .num{
+    color:var(--turquoise);
+    margin-right:10px;
+    font-weight:700;
+  }
+  h3{
+    font-size:17px;
+    color:var(--bleu-nuit);
+    margin:28px 0 8px;
+    font-weight:600;
+  }
+  p{margin:8px 0;}
+  table{
+    width:100%;
+    border-collapse:collapse;
+    margin:14px 0;
+    font-size:14px;
+  }
+  th,td{
+    border:1px solid var(--bordure);
+    padding:9px 11px;
+    text-align:left;
+    vertical-align:top;
+  }
+  th{
+    background:var(--gris-clair);
+    color:var(--bleu-nuit);
+    font-weight:600;
+  }
+  tr:nth-child(even) td{background:#FBFCFE;}
+  code{
+    background:var(--gris-clair);
+    border:1px solid var(--bordure);
+    border-radius:4px;
+    padding:1px 6px;
+    font-family:"Consolas","Courier New",monospace;
+    font-size:13px;
+    color:#1B2A4A;
+  }
+  pre{
+    background:#1B2A4A;
+    color:#E6EDF7;
+    padding:16px 18px;
+    border-radius:8px;
+    overflow-x:auto;
+    font-family:"Consolas","Courier New",monospace;
+    font-size:13px;
+    line-height:1.5;
+  }
+  .callout{
+    border-left:4px solid var(--turquoise);
+    background:#EEF8F7;
+    padding:12px 16px;
+    margin:16px 0;
+    border-radius:0 6px 6px 0;
+    font-size:14px;
+  }
+  .callout.orange{border-left-color:var(--orange);background:#FDF3EA;}
+  .callout.rouge{border-left-color:var(--rouge);background:#FBEDEB;}
+  .callout.vert{border-left-color:var(--vert);background:#EDF7F1;}
+  .callout strong{color:var(--bleu-nuit);}
+  .tag{
+    display:inline-block;
+    padding:2px 9px;
+    border-radius:12px;
+    font-size:11px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    margin-left:6px;
+    vertical-align:middle;
+  }
+  .tag.gratuit{background:#E6F4EA;color:var(--vert);}
+  .tag.perspective{background:#FDF3EA;color:var(--orange);}
+  .tag.exclu{background:#FBEDEB;color:var(--rouge);}
+  .tag.phase2{background:#E3F0FB;color:#1B5FAA;}
+  ul,ol{margin:8px 0 8px 22px;padding:0;}
+  li{margin:4px 0;}
+  .sommaire{
+    background:var(--gris-clair);
+    border:1px solid var(--bordure);
+    border-radius:8px;
+    padding:20px 26px;
+    margin-top:32px;
+  }
+  .sommaire h3{margin-top:0;}
+  .sommaire ol{margin-left:18px;}
+  .sommaire a{color:var(--bleu-nuit);text-decoration:none;}
+  .sommaire a:hover{color:var(--turquoise);text-decoration:underline;}
+  footer{
+    background:var(--bleu-nuit);
+    color:#C9D3E3;
+    padding:26px 48px;
+    font-size:12px;
+    text-align:center;
+  }
+  @media print{
+    header.cover{padding:40px 24px;}
+    main{padding:0 24px 40px;}
+    section{page-break-inside:avoid;}
+    pre{white-space:pre-wrap;}
+  }
+</style>
+</head>
+<body>
+
+<header class="cover">
+  <div class="kicker">Rapport · Phase 2 · Architecture &amp; Implémentation</div>
+  <h1>Logement étudiant à Monastir<br>Architecture Backend &amp; Coordination Agents</h1>
+  <p class="sub">
+    Projet IntelliJ : <strong>LogEtd</strong> · Package racine : <strong>org.logetd</strong>.
+    Architecture monolithe modulaire, modèle de données, contrat API et stratégie multi-agents.
+  </p>
+  <div class="meta">
+    <div><span>Version</span>Consolidée — 23 novembre 2026</div>
+    <div><span>Cadre</span>Projet éducatif · jury de professeurs</div>
+    <div><span>Équipe</span>Développeur unique + agents IA</div>
+    <div><span>Contrainte</span>Spring Boot · 100 % gratuit · IntelliJ</div>
+    <div><span>Compatible</span>Phase 1 du 17 novembre 2026</div>
+  </div>
+</header>
+
+<main>
+
+<div class="sommaire">
+  <h3>Sommaire</h3>
+  <ol>
+    <li><a href="#s1">Principes et alignement avec le projet IntelliJ</a></li>
+    <li><a href="#s2">Architecture globale</a></li>
+    <li><a href="#s3">Structure des packages et du code</a></li>
+    <li><a href="#s4">Modèle de données (Entités JPA)</a></li>
+    <li><a href="#s5">Conception de l'API et contrat</a></li>
+    <li><a href="#s6">Sécurité et authentification</a></li>
+    <li><a href="#s7">Contrainte anti-chevauchement (Point critique)</a></li>
+    <li><a href="#s8">Stratégie multi-agents et coordination</a></li>
+    <li><a href="#s9">Feuille de route de développement</a></li>
+    <li><a href="#s10">Risques et décisions retenues</a></li>
+  </ol>
+</div>
+
+<!-- 1 -->
+<section id="s1">
+  <h2><span class="num">01</span>Principes et alignement avec le projet IntelliJ</h2>
+  <p>
+    Ce rapport définit l'architecture technique du backend Spring Boot pour le projet
+    <strong>Logement étudiant à Monastir</strong>. Il est strictement aligné sur l'environnement
+    IntelliJ déjà créé par l'équipe de développement.
+  </p>
+  
+  <div class="callout vert">
+    <strong>Informations du projet IntelliJ :</strong>
+    <ul>
+      <li><strong>Nom du projet :</strong> LogEtd</li>
+      <li><strong>Package racine :</strong> <code>org.logetd</code></li>
+      <li><strong>Dossier des sources :</strong> <code>src/main/java/org/logetd/</code></li>
+      <li><strong>Dossier des ressources :</strong> <code>src/main/resources/</code></li>
+      <li><strong>JDK :</strong> OpenJDK 17 ou 25</li>
+    </ul>
+  </div>
+
+  <h3>Contraintes structurantes</h3>
+  <ul>
+    <li>Framework : <strong>Spring Boot 3.5.x</strong>, Maven.</li>
+    <li>Base de données : <strong>PostgreSQL</strong> (création automatique des tables via <code>ddl-auto=update</code>).</li>
+    <li>Architecture : <strong>Monolithe modulaire</strong> (découpage strict par packages).</li>
+    <li>Public : Étudiants de Monastir.</li>
+    <li>Paiement : Hors plateforme (D17, virement, espèces) avec double confirmation.</li>
+    <li>Outils : <strong>100 % gratuits</strong>.</li>
+  </ul>
+</section>
+
+<!-- 2 -->
+<section id="s2">
+  <h2><span class="num">02</span>Architecture globale</h2>
+  <h3>Monolithe modulaire</h3>
+  <p>
+    Pour un développeur unique assisté d'agents IA, les microservices ajoutent une complexité inutile. 
+    Le choix est un <strong>monolithe modulaire</strong> : un seul déploiable, mais des frontières de packages 
+    strictes pour éviter le code spaghetti.
+  </p>
+  
+  <pre>LogEtd/
+├── src/main/java/org/logetd/
+│   ├── LogEtdApplication.java
+│   ├── config/       (Sécurité, Configuration CORS, Beans)
+│   ├── shared/       (Énumérations, Exceptions, Utils)
+│   ├── domain/
+│   │   ├── user/     (User)
+│   │   ├── listing/  (Listing, Place, Photo)
+│   │   ├── booking/  (Booking, Visit)
+│   │   ├── payment/  (Payment)
+│   │   ├── messaging/(Message)
+│   │   └── admin/    (Report, AuditLog)
+│   ├── repository/   (Interfaces Spring Data JPA)
+│   ├── service/      (Logique métier)
+│   ├── controller/   (Endpoints REST)
+│   └── dto/          (Data Transfer Objects - Request/Response)
+├── src/main/resources/
+│   ├── application.properties
+│   └── db/migration/ (Scripts Flyway pour contraintes SQL pures)
+└── pom.xml</pre>
+  
+  <div class="callout">
+    <strong>Règle de dépendance :</strong> Un contrôleur ne parle qu'à un service. Un service ne parle qu'à des repositories. Aucune entité JPA ne sort du service sans être convertie en DTO.
+  </div>
+</section>
+
+<!-- 3 -->
+<section id="s3">
+  <h2><span class="num">03</span>Structure des packages et du code</h2>
+  <p>Le code doit être organisé de manière à séparer clairement les responsabilités.</p>
+
+  <table>
+    <tr><th>Package</th><th>Contenu</th></tr>
+    <tr><td><code>org.logetd.shared</code></td><td>Les énumérations (Role, BookingStatus, etc.) et les exceptions métier.</td></tr>
+    <tr><td><code>org.logetd.domain.*</code></td><td>Les entités JPA avec annotations <code>@Entity</code> et <code>@Table</code>.</td></tr>
+    <tr><td><code>org.logetd.repository</code></td><td>Interfaces héritant de <code>JpaRepository</code>.</td></tr>
+    <tr><td><code>org.logetd.service</code></td><td>Logique métier, calculs, validations.</td></tr>
+    <tr><td><code>org.logetd.controller</code></td><td>Endpoints REST, validation des entrées (<code>@Valid</code>).</td></tr>
+    <tr><td><code>org.logetd.dto</code></td><td>Objets de transfert (ex: <code>UserRegisterRequest</code>, <code>ListingResponse</code>).</td></tr>
+    <tr><td><code>org.logetd.config</code></td><td>Configuration Spring (Security, CORS, OpenAPI).</td></tr>
+  </table>
+</section>
+
+<!-- 4 -->
+<section id="s4">
+  <h2><span class="num">04</span>Modèle de données (Entités JPA)</h2>
+
+  <h3>Entités principales</h3>
+  <table>
+    <tr><th>Entité</th><th>Table</th><th>Champs clés</th></tr>
+    <tr><td><code>User</code></td><td><code>users</code></td><td>id, phone, email, passwordHash, fullName, role, status, createdAt</td></tr>
+    <tr><td><code>Listing</code></td><td><code>listings</code></td><td>id, owner, title, description, city, exactAddress, status, lastConfirmedAt</td></tr>
+    <tr><td><code>Place</code></td><td><code>places</code></td><td>id, listing, label, monthlyRentMillimes, chargesMillimes, estimations</td></tr>
+    <tr><td><code>Booking</code></td><td><code>bookings</code></td><td>id, place, tenant, startDate, endDate, status, depositMillimes</td></tr>
+    <tr><td><code>Visit</code></td><td><code>visits</code></td><td>id, listing, tenant, owner, scheduledAt, status, proofCode, provenAt</td></tr>
+    <tr><td><code>Payment</code></td><td><code>payments</code></td><td>id, booking, paymentType, amountMillimes, status, tenantDeclared, ownerConfirmed</td></tr>
+  </table>
+
+  <div class="callout orange">
+    <strong>Règle d'or sur la monnaie :</strong> Tous les montants sont stockés en <strong>millimes</strong> (entiers de type <code>Long</code>), jamais en nombres à virgule flottante (<code>Float</code>, <code>Double</code>), pour éviter les erreurs d'arrondi.
+  </div>
+</section>
+
+<!-- 5 -->
+<section id="s5">
+  <h2><span class="num">05</span>Conception de l'API et contrat</h2>
+
+  <h3>REST, versionné, documenté par OpenAPI</h3>
+  <ul>
+    <li>Préfixe d'URL : <code>/api/v1/...</code></li>
+    <li><strong>Pagination obligatoire</strong> sur les listes (paramètres <code>page</code> et <code>size</code>).</li>
+    <li><strong>Erreurs standardisées</strong> : le serveur renvoie toujours un JSON avec <code>code</code>, <code>message</code>, <code>details</code>, <code>timestamp</code>.</li>
+  </ul>
+
+  <h3>Documentation de l'API</h3>
+  <p>
+    Le backend doit exposer un contrat clair. Tous les endpoints (Auth, Listings, Bookings, Payments)
+    doivent être documentés au fur et à mesure dans le fichier <code>docs/05-api/API_ENDPOINTS.md</code>
+    afin que les agents web (React) et mobile (Kotlin) puissent s'y connecter sans ambiguïté.
+  </p>
+</section>
+
+<!-- 6 -->
+<section id="s6">
+  <h2><span class="num">06</span>Sécurité et authentification</h2>
+  <ul>
+    <li><strong>Authentification :</strong> JWT (access token court + refresh token).</li>
+    <li><strong>Bibliothèque :</strong> Spring Security.</li>
+    <li><strong>Mots de passe :</strong> BCrypt avec un coût de 12.</li>
+    <li><strong>Rôles :</strong> <code>ROLE_TENANT</code>, <code>ROLE_OWNER</code>, <code>ROLE_ADMIN</code>.</li>
+    <li><strong>Validation :</strong> Utilisation stricte de Bean Validation (<code>@NotNull</code>, <code>@Size</code>, etc.) sur tous les DTOs d'entrée.</li>
+  </ul>
+  <div class="callout rouge">
+    <strong>Point de vigilance :</strong> Le rôle <code>ROLE_ADMIN</code> ne doit jamais être accessible via un formulaire d'inscription public. Il est créé manuellement ou via un script d'initialisation.
+  </div>
+</section>
+
+<!-- 7 -->
+<section id="s7">
+  <h2><span class="num">07</span>Contrainte anti-chevauchement (Point critique)</h2>
+  
+  <p>
+    C'est le cœur de la fiabilité de la plateforme. Il doit être impossible pour deux étudiants
+    de réserver la même place aux mêmes dates.
+  </p>
+
+  <div class="callout">
+    <strong>Pourquoi Hibernate ne suffit pas :</strong> 
+    Même avec un <code>if</code> en Java, si deux requêtes arrivent exactement au même moment,
+    les deux pourraient passer. La seule solution fiable est de déléguer cette sécurité à PostgreSQL.
+  </div>
+
+  <h3>Implémentation SQL (via Flyway)</h3>
+  <p>
+    Bien que nous utilisions <code>ddl-auto=update</code> pour le reste, cette contrainte spécifique
+    doit être ajoutée via un script SQL pur dans <code>src/main/resources/db/migration/V1__exclusion_constraint.sql</code> :
+  </p>
+  <pre>CREATE EXTENSION IF NOT EXISTS btree_gist;
+
+ALTER TABLE bookings
+ADD CONSTRAINT no_overlap_active_booking
+EXCLUDE USING gist (
+    place_id WITH =,
+    daterange(start_date, end_date, '[]') WITH &&
+)
+WHERE (status IN ('ACCEPTED', 'DEPOSIT_PENDING', 'CONFIRMED', 'IN_PROGRESS'));</pre>
+
+  <p>
+    Si le code Java tente d'insérer un chevauchement, PostgreSQL lèvera une exception.
+    Le code Java doit attraper cette exception et renvoyer une erreur HTTP <code>409 Conflict</code> 
+    avec le code métier <code>BOOKING_DATES_UNAVAILABLE</code>.
+  </p>
+</section>
+
+<!-- 8 -->
+<section id="s8">
+  <h2><span class="num">08</span>Stratégie multi-agents et coordination</h2>
+
+  <p>
+    Le projet est développé par plusieurs agents IA coordonnés par un humain.
+    Le dossier <code>docs/</code> est la mémoire unique du projet.
+  </p>
+
+  <table>
+    <tr><th>Dossier</th><th>Rôle</th></tr>
+    <tr><td><code>00-context</code></td><td>Vision, contraintes (PROJECT.md)</td></tr>
+    <tr><td><code>01-specs</code></td><td>Rapports fonctionnels et d'architecture</td></tr>
+    <tr><td><code>02-architecture</code></td><td>Contrat API global (API_CONTRACT.md)</td></tr>
+    <tr><td><code>03-tasks</code></td><td>Suivi des tâches étape par étape (TASKS.md)</td></tr>
+    <tr><td><code>04-conventions</code></td><td>Règles de code (CONVENTIONS.md)</td></tr>
+    <tr><td><code>05-api</code></td><td>Liste des endpoints (API_ENDPOINTS.md)</td></tr>
+    <tr><td><code>06-decisions</code></td><td>Journal des choix techniques (DECISIONS.md)</td></tr>
+  </table>
+
+  <div class="callout vert">
+    <strong>Règle d'or de validation :</strong> L'agent réalise UNE étape (ex: Étape 1 - Initialisation), s'arrête, et demande validation à l'humain. L'humain teste (app démarre, tables créées dans pgAdmin), puis autorise le passage à l'étape suivante (Étape 2 - Auth).
+  </div>
+</section>
+
+<!-- 9 -->
+<section id="s9">
+  <h2><span class="num">09</span>Feuille de route de développement</h2>
+
+  <table>
+    <tr><th>Étape</th><th>Contenu</th><th>Livrable démontrable</th></tr>
+    <tr>
+      <td>1 · Initialisation</td>
+      <td>Projet Spring Boot, packages, entités JPA, configuration PostgreSQL.</td>
+      <td>L'application démarre, les tables sont créées.</td>
+    </tr>
+    <tr>
+      <td>2 · Authentification</td>
+      <td>Register, Login, JWT, Rôles.</td>
+      <td>Un utilisateur peut s'inscrire et se connecter.</td>
+    </tr>
+    <tr>
+      <td>3 · Annonces</td>
+      <td>CRUD Listings et Places.</td>
+      <td>Un propriétaire crée une annonce.</td>
+    </tr>
+    <tr>
+      <td>4 · Recherche</td>
+      <td>Filtres, pagination.</td>
+      <td>Recherche avec critères (prix, meublé, etc.).</td>
+    </tr>
+    <tr>
+      <td>5 · Réservations</td>
+      <td>Visites, Bookings, contrainte anti-chevauchement.</td>
+      <td>Un étudiant réserve, la base bloque les doublons.</td>
+    </tr>
+  </table>
+</section>
+
+<!-- 10 -->
+<section id="s10">
+  <h2><span class="num">10</span>Risques et décisions retenues</h2>
+
+  <h3>Décisions validées</h3>
+  <ul>
+    <li><strong>Architecture :</strong> Monolithe modulaire (pas de microservices).</li>
+    <li><strong>Base de données :</strong> PostgreSQL avec <code>ddl-auto=update</code> pour la simplicité, et Flyway pour la contrainte SQL pure.</li>
+    <li><strong>API :</strong> REST versionné, documentation OpenAPI.</li>
+    <li><strong>Sécurité :</strong> JWT + BCrypt coût 12.</li>
+    <li><strong>Coordination :</strong> Travail par étapes avec validation humaine obligatoire.</li>
+  </ul>
+
+  <h3>Risques surveillés</h3>
+  <ul>
+    <li><strong>Concurrence de réservations :</strong> Géré par la contrainte PostgreSQL (test critique obligatoire).</li>
+    <li><strong>Fuite de données :</strong> Masquage des adresses exactes avant visite, téléphones masqués avant réservation.</li>
+    <li><strong>Dérive des agents IA :</strong> Neutralisé par le dossier <code>docs/</code> (règles strictes) et l'arrêt obligatoire à chaque étape.</li>
+  </ul>
+</section>
+
+</main>
+
+<footer>
+  Rapport Phase 2 — Architecture Backend · Version consolidée du 23 novembre 2026 ·
+  Projet IntelliJ LogEtd · Compatible Phase 1 du 17 novembre 2026
+</footer>
+
+</body>
+</html>

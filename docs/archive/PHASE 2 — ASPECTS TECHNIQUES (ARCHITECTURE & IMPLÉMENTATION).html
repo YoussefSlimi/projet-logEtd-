@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapport Phase 2 — Architecture &amp; Implémentation</title>
+<style>
+  :root{
+    --bleu-nuit:#1B2A4A;
+    --turquoise:#2AA6A0;
+    --orange:#E8833A;
+    --gris-clair:#F4F6F9;
+    --gris-texte:#3A4252;
+    --vert:#2E7D5B;
+    --rouge:#B3453A;
+    --bordure:#D8DEE8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--gris-texte);
+    background:#fff;
+    line-height:1.55;
+    font-size:15px;
+  }
+  header.cover{
+    background:linear-gradient(135deg,var(--bleu-nuit) 0%,#243A63 100%);
+    color:#fff;
+    padding:64px 48px 48px;
+  }
+  header.cover .kicker{
+    text-transform:uppercase;
+    letter-spacing:3px;
+    font-size:12px;
+    color:var(--turquoise);
+    font-weight:600;
+  }
+  header.cover h1{
+    font-size:34px;
+    margin:12px 0 8px;
+    font-weight:700;
+    line-height:1.2;
+  }
+  header.cover .sub{
+    font-size:17px;
+    opacity:.9;
+    max-width:720px;
+  }
+  header.cover .meta{
+    margin-top:28px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:28px;
+    font-size:13px;
+    opacity:.85;
+  }
+  header.cover .meta div span{
+    display:block;
+    color:var(--turquoise);
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    font-size:11px;
+  }
+  main{
+    max-width:980px;
+    margin:0 auto;
+    padding:0 48px 80px;
+  }
+  section{
+    margin-top:48px;
+    border-top:1px solid var(--bordure);
+    padding-top:32px;
+  }
+  section:first-of-type{border-top:none;}
+  h2{
+    font-size:24px;
+    color:var(--bleu-nuit);
+    margin:0 0 6px;
+    font-weight:700;
+  }
+  h2 .num{
+    color:var(--turquoise);
+    margin-right:10px;
+    font-weight:700;
+  }
+  h3{
+    font-size:17px;
+    color:var(--bleu-nuit);
+    margin:28px 0 8px;
+    font-weight:600;
+  }
+  p{margin:8px 0;}
+  table{
+    width:100%;
+    border-collapse:collapse;
+    margin:14px 0;
+    font-size:14px;
+  }
+  th,td{
+    border:1px solid var(--bordure);
+    padding:9px 11px;
+    text-align:left;
+    vertical-align:top;
+  }
+  th{
+    background:var(--gris-clair);
+    color:var(--bleu-nuit);
+    font-weight:600;
+  }
+  tr:nth-child(even) td{background:#FBFCFE;}
+  code{
+    background:var(--gris-clair);
+    border:1px solid var(--bordure);
+    border-radius:4px;
+    padding:1px 6px;
+    font-family:"Consolas","Courier New",monospace;
+    font-size:13px;
+    color:#1B2A4A;
+  }
+  pre{
+    background:#1B2A4A;
+    color:#E6EDF7;
+    padding:16px 18px;
+    border-radius:8px;
+    overflow-x:auto;
+    font-family:"Consolas","Courier New",monospace;
+    font-size:13px;
+    line-height:1.5;
+  }
+  .callout{
+    border-left:4px solid var(--turquoise);
+    background:#EEF8F7;
+    padding:12px 16px;
+    margin:16px 0;
+    border-radius:0 6px 6px 0;
+    font-size:14px;
+  }
+  .callout.orange{border-left-color:var(--orange);background:#FDF3EA;}
+  .callout.rouge{border-left-color:var(--rouge);background:#FBEDEB;}
+  .callout.vert{border-left-color:var(--vert);background:#EDF7F1;}
+  .callout strong{color:var(--bleu-nuit);}
+  .tag{
+    display:inline-block;
+    padding:2px 9px;
+    border-radius:12px;
+    font-size:11px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    margin-left:6px;
+    vertical-align:middle;
+  }
+  .tag.gratuit{background:#E6F4EA;color:var(--vert);}
+  .tag.perspective{background:#FDF3EA;color:var(--orange);}
+  .tag.exclu{background:#FBEDEB;color:var(--rouge);}
+  ul,ol{margin:8px 0 8px 22px;padding:0;}
+  li{margin:4px 0;}
+  .sommaire{
+    background:var(--gris-clair);
+    border:1px solid var(--bordure);
+    border-radius:8px;
+    padding:20px 26px;
+    margin-top:32px;
+  }
+  .sommaire h3{margin-top:0;}
+  .sommaire ol{margin-left:18px;}
+  .sommaire a{color:var(--bleu-nuit);text-decoration:none;}
+  .sommaire a:hover{color:var(--turquoise);text-decoration:underline;}
+  .grid-2{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+    margin:14px 0;
+  }
+  .card{
+    border:1px solid var(--bordure);
+    border-radius:8px;
+    padding:14px 16px;
+    background:#fff;
+  }
+  .card h4{
+    margin:0 0 6px;
+    color:var(--bleu-nuit);
+    font-size:14px;
+  }
+  .card p{font-size:13px;margin:4px 0;color:#5A6377;}
+  footer{
+    background:var(--bleu-nuit);
+    color:#C9D3E3;
+    padding:26px 48px;
+    font-size:12px;
+    text-align:center;
+  }
+  @media print{
+    header.cover{padding:40px 24px;}
+    main{padding:0 24px 40px;}
+    section{page-break-inside:avoid;}
+    pre{white-space:pre-wrap;}
+  }
+  @media (max-width:700px){
+    header.cover,main,footer{padding-left:20px;padding-right:20px;}
+    .grid-2{grid-template-columns:1fr;}
+    table{font-size:12.5px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="cover">
+  <div class="kicker">Rapport · Phase 2</div>
+  <h1>Architecture &amp; Implémentation<br>Plateforme de location de logements</h1>
+  <p class="sub">
+    Monastir · Sousse · Mahdia — Étudiants, touristes d'été, travailleurs.
+    Document technique consolidé : stack, architecture modulaire, modèle de données,
+    API, sécurité, tests, feuille de route 3 semaines, coûts.
+  </p>
+  <div class="meta">
+    <div><span>Version</span>Consolidée — 16 novembre 2026</div>
+    <div><span>Cadre</span>Projet éducatif · jury de professeurs</div>
+    <div><span>Équipe</span>Développeur unique</div>
+    <div><span>Contrainte</span>Outils 100 % gratuits · Android d'abord</div>
+  </div>
+</header>
+
+<main>
+
+<div class="sommaire">
+  <h3>Sommaire</h3>
+  <ol>
+    <li><a href="#s1">Principes directeurs et périmètre</a></li>
+    <li><a href="#s2">Architecture globale</a></li>
+    <li><a href="#s3">Modèle de données et migrations</a></li>
+    <li><a href="#s4">Conception de l'API</a></li>
+    <li><a href="#s5">Sécurité</a></li>
+    <li><a href="#s6">Stack technique détaillée</a></li>
+    <li><a href="#s7">Organisation du code et travail multi-assistants</a></li>
+    <li><a href="#s8">Services externes, cache et performance</a></li>
+    <li><a href="#s9">Plan de tests</a></li>
+    <li><a href="#s10">Feuille de route 3 semaines et coûts</a></li>
+    <li><a href="#s11">Risques et points à vérifier</a></li>
+    <li><a href="#s12">Décisions retenues</a></li>
+  </ol>
+</div>
+
+<!-- 1 -->
+<section id="s1">
+  <h2><span class="num">01</span>Principes directeurs et périmètre</h2>
+  <p>
+    Ce rapport traduit en choix techniques les spécifications fonctionnelles de la Phase 1.
+    Il ne redéfinit pas le produit : il indique <strong>comment</strong> le construire avec un
+    développeur unique, un budget nul et une fenêtre de trois semaines, tout en produisant
+    un livrable crédible devant un jury.
+  </p>
+  <div class="callout vert">
+    <strong>Règle d'or :</strong> à tout moment, il existe une version qui fonctionne.
+    On avance par niveaux de priorité (noyau → étudiants/travailleurs → si le temps le permet → perspectives).
+    Ce qui n'est pas terminé devient une perspective documentée, jamais un trou dans la démo.
+  </div>
+  <h3>Contraintes structurantes</h3>
+  <ul>
+    <li>Backend imposé : <strong>Spring Boot (Java)</strong>.</li>
+    <li>Frontend web : <strong>React</strong> (+ choix recommandés).</li>
+    <li>Mobile : <strong>Android d'abord</strong>, exigé par le jury.</li>
+    <li>Outils <strong>exclusivement gratuits</strong> (open source ou licence éducative).</li>
+    <li>Paiement <strong>hors plateforme</strong> (D17, virement, espèces) avec double confirmation.</li>
+    <li>Trois villes, trois segments, un seul administrateur au départ.</li>
+  </ul>
+  <h3>Périmètre technique du MVP</h3>
+  <table>
+    <tr><th>Inclus au niveau 1</th><th>Reporté (niveaux 2-4)</th></tr>
+    <tr>
+      <td>
+        Comptes et rôles · création d'annonce · validation admin · recherche et filtres ·
+        fiche annonce · réservation court séjour · paiement double confirmation · messagerie simple ·
+        signalement · back-office minimal · application Android locataire.
+      </td>
+      <td>
+        Prix mensuels · demande de visite · filtres avancés · catégories d'usage ·
+        calendrier saisonnier · contrats · avis croisés · notifications · CIN et badges ·
+        caution · colocation · échéancier · carte · favoris · agences · anglais · monétisation.
+      </td>
+    </tr>
+  </table>
+</section>
+
+<!-- 2 -->
+<section id="s2">
+  <h2><span class="num">02</span>Architecture globale</h2>
+  <h3>Monolithe modulaire, pas de microservices</h3>
+  <p>
+    Pour un développeur unique, trois semaines et une seule instance, les microservices
+    ajoutent du coût (réseau, orchestration, débogage distribué) sans bénéfice.
+    Le choix est un <strong>monolithe modulaire</strong> : un seul déployable, mais des
+    frontières de modules explicites, vérifiées automatiquement par
+    <strong>Spring Modulith</strong>. Le build échoue si un module viole la frontière d'un autre.
+    C'est aussi une excellente illustration d'architecture pour le jury.
+  </p>
+  <pre>backend/src/main/java/tn/rental/
+  ├── auth/          (comptes, rôles, JWT)
+  ├── listings/      (annonces, photos, règles, validation)
+  ├── search/        (recherche, filtres, pagination)
+  ├── bookings/      (demandes, statuts, anti-chevauchement)
+  ├── payments/      (D17, virement, espèces, double confirmation)
+  ├── messaging/     (messagerie, WebSocket)
+  ├── reviews/       (avis croisés)
+  ├── notifications/ (push, e-mail, in-app)
+  ├── admin/         (back-office, signalements, litiges)
+  └── shared/        (erreurs, sécurité, configuration, audit)</pre>
+  <div class="callout">
+    <strong>Règle de dépendance :</strong> un module n'utilise que l'interface publique d'un autre module.
+    Aucun accès direct aux entités JPA d'un autre module. Les échanges passent par des DTO ou des événements internes.
+  </div>
+
+  <h3>Vue d'ensemble des composants</h3>
+  <table>
+    <tr><th>Couche</th><th>Composant</th><th>Rôle</th></tr>
+    <tr><td>Client</td><td>Application Android (Kotlin, vues XML, MVVM)</td><td>Locataire : recherche, réservation, paiement, messagerie</td></tr>
+    <tr><td>Client</td><td>Web React (TypeScript, Vite, MUI)</td><td>Espace propriétaire + back-office admin</td></tr>
+    <tr><td>API</td><td>Spring Boot (Spring Web MVC, REST, OpenAPI)</td><td>Une seule API partagée par toutes les interfaces</td></tr>
+    <tr><td>Temps réel</td><td>WebSocket simple (JSON)</td><td>Messagerie, notifications in-app</td></tr>
+    <tr><td>Données</td><td>PostgreSQL + Flyway</td><td>Persistance, migrations versionnées</td></tr>
+    <tr><td>Cache</td><td>Caffeine (en mémoire)</td><td>Villes, quartiers, configuration, saisons</td></tr>
+    <tr><td>Fichiers</td><td>Disque local du serveur</td><td>Photos d'annonces, reçus, états des lieux</td></tr>
+  </table>
+  <div class="callout orange">
+    <strong>Pas de BFF, pas d'API Gateway.</strong> Avec un seul backend et deux clients,
+    une gateway serait une couche vide. Elle est mentionnée comme perspective si le nombre
+    de clients ou de services augmentait.
+  </div>
+</section>
+
+<!-- 3 -->
+<section id="s3">
+  <h2><span class="num">03</span>Modèle de données et migrations</h2>
+  <h3>Entités principales</h3>
+  <table>
+    <tr><th>Entité</th><th>Champs clés</th><th>Relations</th></tr>
+    <tr><td><code>User</code></td><td>id, téléphone, email, mot de passe (BCrypt), rôle, statut, CIN (chiffrée), date création</td><td>1-N listings (propriétaire), 1-N bookings (locataire)</td></tr>
+    <tr><td><code>Listing</code></td><td>id, titre, description, ville, quartier, adresse exacte (masquée), type, catégorie d'usage, règles, prix, statut</td><td>N-1 owner, 1-N photos, 1-N bookings</td></tr>
+    <tr><td><code>ListingPhoto</code></td><td>id, chemin, ordre, horodatage</td><td>N-1 listing</td></tr>
+    <tr><td><code>Booking</code></td><td>id, dates, statut, montant, acompte, modèle d'annulation</td><td>N-1 listing, N-1 locataire</td></tr>
+    <tr><td><code>Payment</code></td><td>id, type (acompte/loyer/solde/caution), mode (D17/virement/espèces), statut, preuve</td><td>N-1 booking ; double confirmation</td></tr>
+    <tr><td><code>Contract</code></td><td>id, version, contenu figé, date acceptation</td><td>1-1 booking (court ou long séjour)</td></tr>
+    <tr><td><code>Message</code></td><td>id, contenu, expéditeur, horodatage, lu</td><td>N-1 booking (fil de discussion)</td></tr>
+    <tr><td><code>Review</code></td><td>id, note globale, propreté, conformité, commentaire</td><td>N-1 booking</td></tr>
+    <tr><td><code>Report</code></td><td>id, motif, cible (annonce/profil/message), statut</td><td>N-1 signalant</td></tr>
+    <tr><td><code>AuditLog</code></td><td>id, acteur, action, cible, horodatage</td><td>Transverse</td></tr>
+  </table>
+
+  <h3>Contrainte anti-chevauchement</h3>
+  <p>
+    Le cœur de la confiance sur les dates. Implémentée en <strong>SQL pur</strong> dans une migration Flyway,
+    sous forme de contrainte d'exclusion PostgreSQL sur les réservations actives d'un même bien.
+  </p>
+  <pre>-- Migration Flyway (exemple simplifié)
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+
+ALTER TABLE booking
+  ADD CONSTRAINT no_overlap_active_booking
+  EXCLUDE USING gist (
+    listing_id WITH =,
+    daterange(start_date, end_date, '[]') WITH &amp;&amp;
+  )
+  WHERE (status IN ('ACCEPTED','PAYMENT_PENDING','CONFIRMED'));</pre>
+  <div class="callout rouge">
+    <strong>Point critique.</strong> La base lève une violation de contrainte en cas de concurrence.
+    Le code doit l'attraper et renvoyer <code>409 BOOKING_DATES_UNAVAILABLE</code>, jamais une exception non gérée.
+    Ce comportement doit être couvert par un test avec deux demandes simultanées.
+  </div>
+
+  <h3>Stratégie de migration</h3>
+  <ul>
+    <li><strong>Flyway</strong> seul modifie le schéma. JPA est en <code>ddl-auto=validate</code> : toute divergence fait échouer le démarrage.</li>
+    <li>Une migration = un fichier versionné (<code>V1__init.sql</code>, <code>V2__booking_exclusion.sql</code>…), jamais modifié après application.</li>
+    <li>Les données de démonstration passent par un script séparé (<code>R__demo_data.sql</code>), pas par les migrations de schéma.</li>
+  </ul>
+  <div class="callout orange">
+    <strong>Temps et montants.</strong> Dates de séjour stockées en <code>date</code> simple (sans heure).
+    Horodatages en UTC, convertis en <code>Africa/Tunis</code> à l'affichage. Montants en <strong>millimes</strong> (entiers),
+    jamais en flottants.
+  </div>
+</section>
+
+<!-- 4 -->
+<section id="s4">
+  <h2><span class="num">04</span>Conception de l'API</h2>
+  <h3>REST, versionné, documenté par OpenAPI</h3>
+  <ul>
+    <li><strong>REST</strong> plutôt que GraphQL : plus simple, mieux outillé, adapté à deux clients.</li>
+    <li><strong>Versionnement</strong> par préfixe d'URL : <code>/api/v1/...</code>.</li>
+    <li><strong>Pagination obligatoire</strong> sur les listes, taille maximale limitée.</li>
+    <li><strong>Erreurs standardisées</strong> : code métier stable + message + détails de validation.</li>
+    <li><strong>OpenAPI</strong> généré par springdoc-openapi, servant de contrat pour le web et Android.</li>
+  </ul>
+
+  <h3>Format d'erreur standard</h3>
+  <pre>{
+  "code": "BOOKING_DATES_UNAVAILABLE",
+  "message": "Ces dates ne sont plus disponibles.",
+  "details": [{"field": "startDate", "issue": "overlap"}],
+  "timestamp": "2026-11-16T10:42:00Z"
+}</pre>
+
+  <h3>Endpoints principaux du niveau 1</h3>
+  <table>
+    <tr><th>Méthode</th><th>Chemin</th><th>Rôle</th></tr>
+    <tr><td>POST</td><td><code>/api/v1/auth/register</code> · <code>/login</code></td><td>Inscription, connexion (JWT)</td></tr>
+    <tr><td>GET</td><td><code>/api/v1/listings</code></td><td>Recherche paginée + filtres</td></tr>
+    <tr><td>GET</td><td><code>/api/v1/listings/{id}</code></td><td>Fiche annonce (adresse masquée)</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/listings</code></td><td>Création d'annonce (propriétaire)</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/bookings</code></td><td>Demande de réservation</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/bookings/{id}/accept</code></td><td>Acceptation propriétaire</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/payments</code></td><td>Déclaration de paiement + preuve</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/payments/{id}/confirm</code></td><td>Confirmation « reçu » propriétaire</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/reports</code></td><td>Signalement</td></tr>
+    <tr><td>GET</td><td><code>/api/v1/admin/queue</code></td><td>File « à faire » admin</td></tr>
+  </table>
+  <div class="callout">
+    <strong>Idempotence.</strong> Les endpoints de paiement acceptent une clé d'idempotence
+    (<code>Idempotency-Key</code> dans l'en-tête) pour éviter les doubles déclarations en cas de
+    nouvelle tentative réseau. Même si aucun paiement réel ne transite, la double confirmation
+    rend ce point nécessaire.
+  </div>
+  <div class="callout orange">
+    <strong>Client généré.</strong> Le contrat OpenAPI génère les types et le client web
+    (<code>openapi-typescript</code>) et les interfaces Retrofit Android (plugin Gradle OpenAPI Generator).
+    Plan B si la génération Android pose problème : écrire à la main les 15-20 appels du niveau 1.
+  </div>
+</section>
+
+<!-- 5 -->
+<section id="s5">
+  <h2><span class="num">05</span>Sécurité</h2>
+  <p>
+    Périmètre volontairement resserré sur quatre points à forte valeur, adaptés à un projet éducatif
+    de trois semaines. Le reste est documenté comme perspective.
+  </p>
+
+  <h3>Authentification et autorisation</h3>
+  <table>
+    <tr><th>Élément</th><th>Choix</th><th>Justification</th></tr>
+    <tr><td>Authentification</td><td>JWT (access court + refresh)</td><td>Standard, adapté au mobile</td></tr>
+    <tr><td>Bibliothèque</td><td>Spring Security + OAuth2 Resource Server (Nimbus)</td><td>Moins de code maison qu'un filtre JWT écrit à la main</td></tr>
+    <tr><td>Mots de passe</td><td>BCrypt (coût 12)</td><td>Suffisant, pas de dépendance supplémentaire</td></tr>
+    <tr><td>Autorisation</td><td>Rôles : <code>ROLE_TENANT</code>, <code>ROLE_OWNER</code>, <code>ROLE_ADMIN</code></td><td>RBAC simple, suffisant pour trois acteurs</td></tr>
+    <tr><td>MFA</td><td>Hors périmètre niveau 1</td><td>Perspective ; à mentionner au jury</td></tr>
+  </table>
+
+  <h3>Protection des API</h3>
+  <ul>
+    <li><strong>Validation des entrées</strong> : Bean Validation sur tous les endpoints.</li>
+    <li><strong>Rate limiting</strong> : Bucket4j sur l'authentification et la messagerie (en mémoire, une instance).</li>
+    <li><strong>CORS restrictif</strong> : uniquement l'origine du frontend web.</li>
+    <li><strong>Masquage des données</strong> : adresse exacte et téléphone cachés jusqu'à réservation confirmée ; filtrage des numéros écrits dans les messages.</li>
+    <li><strong>OWASP Top 10</strong> : couvert par les choix ci-dessus, sans audit formel (perspective).</li>
+  </ul>
+
+  <h3>Données sensibles</h3>
+  <table>
+    <tr><th>Donnée</th><th>Mesure</th></tr>
+    <tr><td>CIN, justificatifs de propriété</td><td>Visibles uniquement par les admins habilités ; conservation limitée ; jamais exposés par l'API publique</td></tr>
+    <tr><td>Mots de passe</td><td>BCrypt, jamais renvoyés par l'API</td></tr>
+    <tr><td>Jetons Android</td><td>Chiffrés avec une clé de l'Android Keystore (DataStore + Tink, ou EncryptedSharedPreferences si encore maintenu — à vérifier au moment du développement)</td></tr>
+    <tr><td>Journaux</td><td>Aucune donnée personnelle sensible dans les logs</td></tr>
+  </table>
+
+  <h3>Sécurité mobile</h3>
+  <ul>
+    <li>Stockage sécurisé des jetons (Keystore).</li>
+    <li>Pas de certificate pinning au niveau 1 : configuration complexe pour un bénéfice limité en démo locale.</li>
+    <li>Pas de détection root/jailbreak.</li>
+    <li>Ces deux points sont documentés comme perspectives dans le rapport.</li>
+  </ul>
+  <div class="callout rouge">
+    <strong>Limite à afficher clairement.</strong> La plateforme ne détient pas l'argent et ne peut pas forcer
+    un remboursement. Une capture d'écran est une preuve faible. La double confirmation et l'intervention
+    de l'admin sur les cas bloqués sont les seuls leviers réels. Cette limite doit figurer dans les
+    conditions d'utilisation et dans le rapport.
+  </div>
+  <div class="callout orange">
+    <strong>Protection des données personnelles.</strong> La loi tunisienne (INPDP) s'applique.
+    Un avis juridique est conseillé dans un cadre réel. Pour le projet éducatif, les données de démonstration
+    sont fausses et les documents factices.
+  </div>
+</section>
+
+<!-- 6 -->
+<section id="s6">
+  <h2><span class="num">06</span>Stack technique détaillée</h2>
+
+  <h3>Backend — Java 17, Maven</h3>
+  <table>
+    <tr><th>Besoin</th><th>Choix</th><th>Remarque</th></tr>
+    <tr><td>Framework</td><td>Spring Boot 3.5.x (dernière maintenue)</td><td>Vérifier sur start.spring.io au moment du développement</td></tr>
+    <tr><td>Web / API</td><td>Spring Web (MVC)</td><td>Pas de WebFlux</td></tr>
+    <tr><td>Persistance</td><td>Spring Data JPA + PostgreSQL</td><td><code>ddl-auto=validate</code></td></tr>
+    <tr><td>Migrations</td><td>Flyway</td><td>Contrainte anti-chevauchement en SQL pur</td></tr>
+    <tr><td>Sécurité</td><td>Spring Security + OAuth2 Resource Server</td><td>JWT Nimbus</td></tr>
+    <tr><td>Validation</td><td>Bean Validation (Jakarta)</td><td></td></tr>
+    <tr><td>Documentation</td><td>springdoc-openapi</td><td>Contrat OpenAPI généré</td></tr>
+    <tr><td>Rate limiting</td><td>Bucket4j</td><td>En mémoire</td></tr>
+    <tr><td>WebSocket</td><td>spring-boot-starter-websocket</td><td>JSON simple</td></tr>
+    <tr><td>Images</td><td>Thumbnailator</td><td>Redimensionnement</td></tr>
+    <tr><td>Mapping DTO</td><td>MapStruct</td><td>Retenu ; pas de Lombok</td></tr>
+    <tr><td>Architecture</td><td>Spring Modulith</td><td>Vérification automatique des frontières</td></tr>
+    <tr><td>Tests</td><td>JUnit 5, Mockito, AssertJ, Spring Boot Test, MockMvc</td><td></td></tr>
+  </table>
+
+  <h3>Web — React + TypeScript + Vite</h3>
+  <table>
+    <tr><th>Besoin</th><th>Choix</th></tr>
+    <tr><td>Outil et langage</td><td>React + TypeScript + Vite (pas Next.js)</td></tr>
+    <tr><td>Routage</td><td>React Router</td></tr>
+    <tr><td>Données serveur</td><td>TanStack Query</td></tr>
+    <tr><td>État local global</td><td>Contexte léger pour l'utilisateur connecté (pas de Redux)</td></tr>
+    <tr><td>Formulaires</td><td>React Hook Form + Zod</td></tr>
+    <tr><td>Client d'API</td><td>Généré depuis OpenAPI (<code>openapi-typescript</code>)</td></tr>
+    <tr><td>Interface</td><td>MUI + Framer Motion (animations) + Recharts (indicateurs)</td></tr>
+    <tr><td>Langues et RTL</td><td>react-i18next, bascule arabe/français</td></tr>
+    <tr><td>Tests</td><td>Vitest + Testing Library</td></tr>
+  </table>
+  <div class="callout">
+    <strong>Pourquoi MUI plutôt que Tailwind.</strong> MUI fournit des composants prêts (formulaires, tableaux,
+    boîtes de dialogue, calendrier) et un support RTL documenté. En trois semaines et seul, il donne plus vite
+    un résultat professionnel. Tailwind demanderait de construire les composants et de régler le RTL à la main.
+    Le thème MUI reprend les couleurs du document (bleu nuit, turquoise, orange) pour une identité cohérente.
+  </div>
+
+  <h3>Android — Kotlin, vues XML</h3>
+  <table>
+    <tr><th>Besoin</th><th>Choix</th></tr>
+    <tr><td>Architecture</td><td>MVVM : Fragment → ViewModel → Repository, avec StateFlow</td></tr>
+    <tr><td>Navigation</td><td>Navigation Component (une activité, plusieurs fragments)</td></tr>
+    <tr><td>Réseau</td><td>Retrofit + OkHttp, Moshi ou kotlinx.serialization</td></tr>
+    <tr><td>WebSocket</td><td>OkHttp WebSocket, reconnexion automatique</td></tr>
+    <tr><td>Asynchrone</td><td>Coroutines et Flow</td></tr>
+    <tr><td>Injection de dépendances</td><td>Hilt</td></tr>
+    <tr><td>Images</td><td>Coil</td></tr>
+    <tr><td>Interface</td><td>Material Components, ViewBinding, RecyclerView</td></tr>
+    <tr><td>Stockage des jetons</td><td>DataStore + clé Android Keystore (Tink), ou EncryptedSharedPreferences si maintenu</td></tr>
+    <tr><td>Tests</td><td>JUnit + MockK sur les ViewModels</td></tr>
+  </table>
+  <div class="callout orange">
+    <strong>Vérification à faire au démarrage.</strong> L'état de maintenance de <code>androidx.security:security-crypto</code>
+    (EncryptedSharedPreferences) doit être vérifié sur la page officielle au moment de créer le projet.
+    Si la bibliothèque est dépréciée, utiliser DataStore + Tink. Le principe de sécurité reste identique :
+    les jetons sont chiffrés par une clé qui ne quitte pas le Keystore.
+  </div>
+
+  <h3>Gratuité des composants</h3>
+  <p>
+    Le cœur de la pile est gratuit et open source. Cinq nuances à connaître et à documenter dans le rapport :
+  </p>
+  <table>
+    <tr><th>Composant</th><th>Statut</th></tr>
+    <tr><td>Spring Boot, React, PostgreSQL, Flyway, MUI core, Framer Motion, Recharts, Retrofit, OkHttp, Hilt, Coil, Mailpit, Bucket4j, Thumbnailator, JUnit</td><td>Gratuit / open source</td></tr>
+    <tr><td>MUI X (composants avancés)</td><td>Partie payante ; utiliser uniquement le cœur et les composants Community</td></tr>
+    <tr><td>IntelliJ IDEA Ultimate</td><td>Gratuit via le pack étudiant JetBrains (usage éducatif, non commercial)</td></tr>
+    <tr><td>GitHub Actions</td><td>Gratuit avec quota de minutes sur dépôt privé ; illimité sur dépôt public</td></tr>
+    <tr><td>Google Play</td><td>Compte développeur payant ; non requis (démo par APK direct)</td></tr>
+  </table>
+</section>
+
+<!-- 7 -->
+<section id="s7">
+  <h2><span class="num">07</span>Organisation du code et travail multi-assistants</h2>
+  <p>
+    C'est le point qui fait la différence entre un projet cohérent et trois morceaux qui ne s'assemblent pas.
+    Les assistants de codage accélèrent l'écriture, pas les tests ni l'intégration.
+  </p>
+
+  <h3>Règles de travail</h3>
+  <ol>
+    <li><strong>Un dossier <code>docs/</code> servant de mémoire du projet</strong>, donné à chaque assistant en début de session : règles de la Phase 1, modèle de données, contrat OpenAPI, conventions de code, liste des décisions.</li>
+    <li><strong>Un fichier de conventions</strong> : nommage, structure des modules, format des erreurs, gestion du temps (UTC en base, Tunisie à l'affichage), montants en millimes, interdiction de renvoyer des entités JPA directement.</li>
+    <li><strong>Travail par tranche verticale</strong> : une fonction à la fois, de la base à l'écran, avec des tests, plutôt que « tout le backend » puis « tout le web ».</li>
+    <li><strong>Une branche par fonction</strong>, petites modifications, intégration continue qui bloque un code cassant les tests.</li>
+    <li><strong>Relire tout code touchant la sécurité, les paiements ou les statuts.</strong> C'est là que les assistants produisent du code qui paraît juste mais est faux.</li>
+    <li><strong>Un journal de décisions</strong> (une page par décision importante), matière directe pour le rapport.</li>
+  </ol>
+
+  <h3>Pièges JPA à surveiller</h3>
+  <ul>
+    <li>Requêtes en cascade (« N+1 ») sur la recherche : utiliser des projections DTO et des tests sur le nombre de requêtes.</li>
+    <li>Chargement paresseux hors transaction.</li>
+    <li>Entités exposées directement par l'API (fuite d'adresse exacte).</li>
+  </ul>
+
+  <h3>Bibliothèques optionnelles</h3>
+  <p>
+    Chaque outil est justifié, mais trois peuvent être écartés sans conséquence si le temps manque :
+    <strong>Spring Modulith</strong>, <strong>MapStruct</strong> et la <strong>génération Kotlin</strong>.
+    Ils sont marqués « optionnels » dans la feuille de route.
+  </p>
+</section>
+
+<!-- 8 -->
+<section id="s8">
+  <h2><span class="num">08</span>Services externes, cache et performance</h2>
+  <p>Principe : n'ajouter aucun service externe sans nécessité.</p>
+
+  <h3>Intégrations tierces</h3>
+  <table>
+    <tr><th>Besoin</th><th>Décision</th><th>Niveau</th></tr>
+    <tr><td>E-mails</td><td>Mailpit en local (pas d'envoi réel)</td><td>1</td></tr>
+    <tr><td>Notifications push</td><td>Firebase Cloud Messaging (FCM), gratuit, compte Google</td><td>3</td></tr>
+    <tr><td>Notifications en direct</td><td>WebSocket déjà prévu</td><td>1</td></tr>
+    <tr><td>Stockage photos</td><td>Disque local du serveur, chemins en base</td><td>1</td></tr>
+    <tr><td>Cartes</td><td>Aucune au niveau 1 ; perspective OpenStreetMap (osmdroid, Leaflet), gratuit</td><td>Perspective</td></tr>
+    <tr><td>SMS</td><td>Aucun</td><td>Exclu</td></tr>
+    <tr><td>KYC</td><td>Contrôle manuel par l'admin</td><td>3</td></tr>
+    <tr><td>Paiements en ligne</td><td>Aucun</td><td>Exclu</td></tr>
+    <tr><td>Analytics</td><td>Aucun outil externe ; les 8 indicateurs viennent de la base</td><td>1</td></tr>
+  </table>
+  <div class="callout">
+    <strong>Argument pour le rapport.</strong> Le projet ne dépend d'aucun service payant et ne transmet
+    aucune donnée personnelle à un tiers, hors Firebase au niveau 3. FCM est gratuit sans limite de messages,
+    avec un quota de débit par défaut très large (600 000 messages/minute par projet).
+  </div>
+
+  <h3>Cache</h3>
+  <p>
+    Pas de Redis. Cache en mémoire avec <strong>Caffeine</strong> (via le cache de Spring) pour les données
+    qui changent peu : villes, quartiers, configuration, saisons. Redis est présenté comme évolution
+    en cas de plusieurs instances.
+  </p>
+  <div class="callout orange">
+    <strong>Règle de sécurité.</strong> Le cache ne doit jamais servir de données de sécurité périmées
+    (rôles, statut de bannissement). Ne pas mettre en cache les droits ni les statuts de compte.
+  </div>
+
+  <h3>Performance de la recherche</h3>
+  <ul>
+    <li>Index sur ville, quartier, statut, type, catégorie d'usage et prix.</li>
+    <li>Pagination obligatoire, taille maximale limitée.</li>
+    <li>Une seule requête pour la liste, avec la photo principale (éviter le N+1).</li>
+    <li>Filtre sur les dates : exclure les annonces ayant une réservation active sur la période.</li>
+    <li>Test avec un jeu de données plus gros que la démo (quelques milliers d'annonces générées) pour donner un chiffre au jury.</li>
+    <li>Recherche texte : moteur intégré de PostgreSQL si le besoin apparaît. Pas d'Elasticsearch.</li>
+  </ul>
+</section>
+
+<!-- 9 -->
+<section id="s9">
+  <h2><span class="num">09</span>Plan de tests</h2>
+  <p>Pyramide réaliste pour trois semaines et un développeur seul.</p>
+  <table>
+    <tr><th>Niveau</th><th>Outils</th><th>Périmètre</th></tr>
+    <tr>
+      <td>Tests unitaires backend</td>
+      <td>JUnit 5 + Mockito</td>
+      <td>Règles métier critiques : chevauchement de dates, calcul d'acompte, transitions de statut, double confirmation de paiement</td>
+    </tr>
+    <tr>
+      <td>Tests d'intégration backend</td>
+      <td>Testcontainers PostgreSQL</td>
+      <td>Recherche et contraintes de base (anti-chevauchement)</td>
+    </tr>
+    <tr>
+      <td>Tests Android</td>
+      <td>JUnit + MockK</td>
+      <td>ViewModels</td>
+    </tr>
+    <tr>
+      <td>Tests E2E</td>
+      <td>Aucun au niveau 1</td>
+      <td>Parcours manuel documenté pour la démo</td>
+    </tr>
+  </table>
+
+  <div class="callout vert">
+    <strong>Le test qui vaut plus que dix autres.</strong> Un test d'intégration avec deux demandes
+    concurrentes sur les mêmes dates, qui doit renvoyer <code>409 BOOKING_DATES_UNAVAILABLE</code>
+    et non une exception non gérée. C'est là que les assistants produisent le plus souvent du code
+    qui semble fonctionner mais échoue en concurrence.
+  </div>
+
+  <div class="callout orange">
+    <strong>Prérequis.</strong> Testcontainers exige Docker. Si Docker n'est pas installé ou pose problème,
+    plan B : base PostgreSQL locale dédiée aux tests, avec la même migration Flyway.
+    À vérifier avant la semaine 2, pas au dernier moment.
+  </div>
+</section>
+
+<!-- 10 -->
+<section id="s10">
+  <h2><span class="num">10</span>Feuille de route 3 semaines et coûts</h2>
+
+  <h3>Répartition</h3>
+  <table>
+    <tr><th>Semaine</th><th>Objectif</th><th>Livrable démontrable</th></tr>
+    <tr>
+      <td>1</td>
+      <td>Socle : comptes, rôles, création d'annonce, validation admin, début de l'API, schéma de base + migrations Flyway</td>
+      <td>Un propriétaire crée une annonce, un admin la valide</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Recherche, fiche annonce, réservation court séjour, paiement avec double confirmation, application Android locataire (recherche + réservation)</td>
+      <td>Un locataire cherche, réserve, déclare un paiement ; le propriétaire confirme</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Messagerie, signalement, tests, données de démonstration, préparation de la présentation</td>
+      <td>Parcours complet de bout en bout + back-office</td>
+    </tr>
+  </table>
+  <div class="callout orange">
+    <strong>Marge de sécurité.</strong> La fin de la semaine 3 est bloquée pour les tests et la présentation
+    uniquement, sans développement de nouvelles fonctionnalités.
+  </div>
+
+  <h3>Coûts</h3>
+  <table>
+    <tr><th>Poste</th><th>Coût</th><th>Remarque</th></tr>
+    <tr><td>Hébergement backend + base</td><td>0 DT</td><td>Développement et démo en local (localhost)</td></tr>
+    <tr><td>Nom de domaine</td><td>0 DT</td><td>Non nécessaire pour une démo locale</td></tr>
+    <tr><td>Certificat TLS</td><td>0 DT</td><td>Non nécessaire en local</td></tr>
+    <tr><td>FCM, Mailpit, Caffeine, Testcontainers, GitHub Actions (quota gratuit)</td><td>0 DT</td><td>Gratuit dans les limites du projet</td></tr>
+    <tr><td>IntelliJ Ultimate</td><td>0 DT</td><td>Pack étudiant JetBrains</td></tr>
+    <tr><td>Compte Google Play</td><td>Non requis</td><td>Démo via APK installé directement</td></tr>
+    <tr><th>Total</th><th>0 DT</th><th></th></tr>
+  </table>
+  <div class="callout">
+    <strong>Démonstration en local.</strong> Pas de déploiement cloud pour la démo. Le déploiement cloud
+    (Render, Railway, Fly.io) est mentionné comme perspective dans le rapport : il introduit des quotas,
+    de la configuration et du temps, pour un bénéfice limité devant un jury.
+  </div>
+</section>
+
+<!-- 11 -->
+<section id="s11">
+  <h2><span class="num">11</span>Risques et points à vérifier</h2>
+  <table>
+    <tr><th>Risque</th><th>Réponse</th></tr>
+    <tr><td>Développeur unique, durée courte</td><td>Avancement par niveaux ; règle « toujours une version qui fonctionne » ; fin de semaine 3 réservée aux tests</td></tr>
+    <tr><td>Paiement hors plateforme</td><td>Capture d'écran = preuve faible ; la double confirmation est le vrai contrôle ; alerte admin après 48 h</td></tr>
+    <tr><td>Administrateur unique</td><td>Goulot et point de défaillance ; authentification renforcée ; mode démo préchargé ; personne de secours envisagée</td></tr>
+    <tr><td>Contrainte anti-chevauchement</td><td>Implémentée en SQL pur ; test avec deux demandes concurrentes ; erreur 409 traduite</td></tr>
+    <tr><td>Testcontainers / Docker</td><td>À vérifier avant la semaine 2 ; plan B : PostgreSQL local dédié aux tests</td></tr>
+    <tr><td>Bibliothèque security-crypto</td><td>État de maintenance à vérifier au démarrage ; alternative DataStore + Tink</td></tr>
+    <tr><td>Contenu discriminatoire (genre)</td><td>Choix assumé pour le projet éducatif ; à documenter et faire vérifier dans un cadre réel</td></tr>
+    <tr><td>Données personnelles (INPDP)</td><td>Avis juridique conseillé dans un cadre réel ; données de démo fausses</td></tr>
+    <tr><td>D17 et banques</td><td>Conditions d'usage et plafonds à vérifier avant tout usage réel</td></tr>
+    <tr><td>Fiscalité des loyers</td><td>Pas de conseil fiscal dans l'application</td></tr>
+    <tr><td>Contrats</td><td>Relecture juridique nécessaire dans un cadre réel ; l'acceptation horodatée n'est pas une signature électronique légale</td></tr>
+    <tr><td>Licences</td><td>Section « licences des composants utilisés » dans le rapport : open source vs licence éducative</td></tr>
+  </table>
+  <p style="font-size:13px;color:#5A6377;">
+    Ce document ne constitue pas un avis juridique ou fiscal.
+  </p>
+</section>
+
+<!-- 12 -->
+<section id="s12">
+  <h2><span class="num">12</span>Décisions retenues</h2>
+  <table>
+    <tr><th>Point</th><th>Décision</th><th>Statut</th></tr>
+    <tr><td>Architecture</td><td>Monolithe modulaire, frontières vérifiées par Spring Modulith</td><td>Validé</td></tr>
+    <tr><td>Backend</td><td>Spring Boot 3.5.x, Java 17, Maven, PostgreSQL, Flyway</td><td>Validé</td></tr>
+    <tr><td>Web</td><td>React + TypeScript + Vite + MUI + Framer Motion + Recharts</td><td>Validé</td></tr>
+    <tr><td>Android</td><td>Kotlin, vues XML, MVVM, Hilt, Retrofit, OkHttp, Coil</td><td>Validé</td></tr>
+    <tr><td>Mapping DTO</td><td>MapStruct retenu ; pas de Lombok</td><td>Validé</td></tr>
+    <tr><td>API</td><td>REST versionné, OpenAPI, erreurs standardisées, idempotence paiements</td><td>Validé</td></tr>
+    <tr><td>Sécurité backend</td><td>JWT + rôles, Bean Validation, Bucket4j, CORS restrictif</td><td>Validé</td></tr>
+    <tr><td>Sécurité mobile</td><td>Jetons chiffrés Keystore ; pas de pinning ni root detection au niveau 1</td><td>Validé</td></tr>
+    <tr><td>Cache</td><td>Caffeine en mémoire, pas de Redis</td><td>Validé</td></tr>
+    <tr><td>Notifications</td><td>WebSocket + in-app au niveau 1 ; FCM au niveau 3</td><td>Validé</td></tr>
+    <tr><td>Tests</td><td>Unitaires + intégration Testcontainers + ViewModels ; pas d'E2E</td><td>Validé</td></tr>
+    <tr><td>Démo</td><td>Entièrement en local, pas de cloud</td><td>Validé</td></tr>
+    <tr><td>Coût</td><td>0 DT</td><td>Validé</td></tr>
+    <tr><td>IDE</td><td>IntelliJ IDEA Ultimate via pack étudiant</td><td>Validé</td></tr>
+  </table>
+  <div class="callout vert">
+    <strong>Prochaine étape.</strong> Génération du dossier complet : spécifications Phase 1 consolidées,
+    architecture Phase 2 (ce rapport), modèle de données détaillé, plan de tests, feuille de route
+    et liste des décisions. Le tout exportable en PDF pour le jury.
+  </div>
+</section>
+
+</main>
+
+<footer>
+  Rapport Phase 2 — Architecture &amp; Implémentation · Version consolidée du 16 novembre 2026 ·
+  Projet éducatif · Outils 100 % gratuits · Android d'abord
+</footer>
+
+</body>
+</html>

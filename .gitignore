@@ -1,0 +1,25 @@
+# Backend (Spring Boot / Maven)
+**/target/
+**/.mvn/wrapper/maven-wrapper.jar
+**/*.log
+**/uploads/
+**/.env
+**/src/main/resources/application-local.properties
+
+# IDE
+**/.idea/
+**/*.iml
+**/.vscode/
+
+# Frontend (Node / Vite)
+**/node_modules/
+**/dist/
+**/.env.local
+**/.env.*.local
+
+# Hallmark — artifacts locaux (captures, logs de prompts)
+**/.hallmark/
+
+# OS
+.DS_Store
+Thumbs.db

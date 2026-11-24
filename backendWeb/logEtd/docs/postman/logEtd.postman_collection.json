@@ -1,0 +1,749 @@
+{
+  "info": {
+    "name": "logEtd API — Étapes 1 à 7",
+    "description": "Collection Postman prête à importer pour tester le backend logEtd en local.\n\nBase URL : http://localhost:8082 (voir server.port dans application.properties ; le port réel est affiché dans la console au démarrage).\n\nAu premier démarrage, une seule donnée est créée : le compte ADMIN de bootstrap (admin@logetd.local / Admin123!). Aucune annonce, réservation, visite ou paiement de test n'est inséré automatiquement. La migration V1 ne fait que créer la contrainte SQL anti-chevauchement.\n\nOrdre conseillé : 1) Auth (inscription + login OWNER/TENANT/ADMIN), 2) Annonces (créer, photos, place, validation ADMIN), 3) Réservations, 4) Visites, 5) Paiements, 6) Messagerie, 7) Signalements, 8) Administration.\n\nVariables à renseigner avant de lancer : photo1, photo2, photo3 (images jpg/png/webp), proofFile (jpg/png/pdf). Le reste est rempli automatiquement par les scripts de test.\n\nLe WebSocket brut /ws/messages n'est pas natif dans cette collection : utilisez le repli REST POST /api/v1/messages (voir dossier Messagerie).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{tenantToken}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8082" },
+    { "key": "tenantToken", "value": "" },
+    { "key": "ownerToken", "value": "" },
+    { "key": "adminToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "tenantId", "value": "" },
+    { "key": "ownerId", "value": "" },
+    { "key": "listingId", "value": "" },
+    { "key": "placeId", "value": "" },
+    { "key": "bookingId", "value": "" },
+    { "key": "visitId", "value": "" },
+    { "key": "paymentId", "value": "" },
+    { "key": "proofCode", "value": "" },
+    { "key": "tenantEmail", "value": "tenant@test.local" },
+    { "key": "ownerEmail", "value": "owner@test.local" },
+    { "key": "tenantPhone", "value": "+21612345678" },
+    { "key": "ownerPhone", "value": "+21687654321" },
+    { "key": "photo1", "value": "" },
+    { "key": "photo2", "value": "" },
+    { "key": "photo3", "value": "" },
+    { "key": "proofFile", "value": "" },
+    { "key": "paymentDeclKey", "value": "" },
+    { "key": "paymentConfKey", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Authentification",
+      "item": [
+        {
+          "name": "Register OWNER (génère un email/tel uniques)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const ts = Date.now();",
+                  "pm.collectionVariables.set('ownerEmail', 'owner' + ts + '@test.local');",
+                  "pm.collectionVariables.set('ownerPhone', '+216' + String(ts).slice(-8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const u = pm.response.json();",
+                  "  pm.collectionVariables.set('ownerId', u.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "noauth" },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{ownerPhone}}\",\n  \"email\": \"{{ownerEmail}}\",\n  \"password\": \"Test1234!\",\n  \"fullName\": \"Propriétaire Test\",\n  \"role\": \"OWNER\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "register"] }
+          }
+        },
+        {
+          "name": "Register TENANT (génère un email/tel uniques)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const ts = Date.now();",
+                  "pm.collectionVariables.set('tenantEmail', 'tenant' + ts + '@test.local');",
+                  "pm.collectionVariables.set('tenantPhone', '+216' + String(ts + 1).slice(-8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const u = pm.response.json();",
+                  "  pm.collectionVariables.set('tenantId', u.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "noauth" },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{tenantPhone}}\",\n  \"email\": \"{{tenantEmail}}\",\n  \"password\": \"Test1234!\",\n  \"fullName\": \"Locataire Test\",\n  \"role\": \"TENANT\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "register"] }
+          }
+        },
+        {
+          "name": "Login OWNER → ownerToken",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const d = pm.response.json();",
+                  "  pm.collectionVariables.set('ownerToken', d.accessToken);",
+                  "  pm.collectionVariables.set('ownerRefresh', d.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "noauth" },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{ownerEmail}}\",\n  \"password\": \"Test1234!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Login TENANT → tenantToken + refreshToken",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const d = pm.response.json();",
+                  "  pm.collectionVariables.set('tenantToken', d.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', d.refreshToken);",
+                  "  pm.collectionVariables.set('tenantId', d.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "noauth" },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{tenantEmail}}\",\n  \"password\": \"Test1234!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Login ADMIN → adminToken (admin@logetd.local / Admin123!)",
+          "description": "Si la requête suivante renvoie UNAUTHENTICATED : 1) vérifier que cette requête renvoie bien 200 avec un champ accessToken ; 2) ouvrir l'icône « œil » de Postman et vérifier que la variable adminToken est remplie ; 3) si un Environnement est sélectionné en haut à droite, une variable d'environnement adminToken écrase la variable de collection (supprimez-la ou remplissez-la) ; 4) ne PAS utiliser refreshToken ici (réservé au logout).",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const d = pm.response.json();",
+                  "  pm.test('accessToken ADMIN présent', function () {",
+                  "    pm.expect(d.accessToken).to.be.a('string').and.not.empty;",
+                  "  });",
+                  "  pm.collectionVariables.set('adminToken', d.accessToken);",
+                  "  pm.collectionVariables.set('adminRefresh', d.refreshToken);",
+                  "} else {",
+                  "  pm.test('Login ADMIN réussi', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "noauth" },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"admin@logetd.local\",\n  \"password\": \"Admin123!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Logout (Bearer REFRESH token, pas l'access token)",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "noauth" },
+            "header": [{ "key": "Authorization", "value": "Bearer {{refreshToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/logout", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "logout"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Annonces (Listings)",
+      "item": [
+        {
+          "name": "Créer une annonce (OWNER) → listingId",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('listingId', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{ownerToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Studio campus Monastir\",\n  \"description\": \"Chambre proche campus, calme et meublée.\",\n  \"city\": \"Monastir\",\n  \"exactAddress\": \"12 rue Sidi El Hani, Monastir\",\n  \"genderRule\": \"MIXED\",\n  \"district\": \"Sidi El Hani\",\n  \"furnished\": true,\n  \"chargesIncluded\": false,\n  \"internetIncluded\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/listings", "host": ["{{baseUrl}}"], "path": ["api", "v1", "listings"] }
+          }
+        },
+        {
+          "name": "Upload 3 photos (dont 1 extérieure) — multipart",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{ownerToken}}", "type": "string" }] },
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "files", "type": "file", "src": "{{photo1}}" },
+                { "key": "files", "type": "file", "src": "{{photo2}}" },
+                { "key": "files", "type": "file", "src": "{{photo3}}" },
+                { "key": "exterior", "type": "text", "value": "true" },
+                { "key": "exterior", "type": "text", "value": "false" },
+                { "key": "exterior", "type": "text", "value": "false" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/listings/:id/photos", "host": ["{{baseUrl}}"], "path": ["api", "v1", "listings", ":id", "photos"], "variable": [{ "key": "id", "value": "{{listingId}}" }] }
+          }
+        },
+        {
+          "name": "Ajouter une place (OWNER) → placeId",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const d = pm.response.json();",
+                  "  if (d.places && d.places.length) pm.collectionVariables.set('placeId', d.places[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{ownerToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"Chambre A\",\n  \"monthlyRentMillimes\": 350000,\n  \"chargesMillimes\": 50000,\n  \"estimations\": \"Électricité et eau estimées\",\n  \"estimationsMillimes\": 15000\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/listings/:id/places", "host": ["{{baseUrl}}"], "path": ["api", "v1", "listings", ":id", "places"], "variable": [{ "key": "id", "value": "{{listingId}}" }] }
+          }
+        },
+        {
+          "name": "Valider l'annonce créée (ADMIN) → PUBLISHED",
+          "description": "À exécuter avant la recherche publique : GET /api/v1/listings ne renvoie que les annonces PUBLISHED depuis l'étape 7.",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/listings/:id/validate", "host": ["{{baseUrl}}"], "path": ["api", "v1", "admin", "listings", ":id", "validate"], "variable": [{ "key": "id", "value": "{{listingId}}" }] }
+          }
+        },
+        {
+          "name": "Rechercher des annonces (filtres + pagination)",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tenantToken}}", "type": "string" }] },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/listings?city=Monastir&district=Sidi&budgetMin=0&budgetMax=500000&genderRule=MIXED&furnished=true&chargesIncluded=false&internetIncluded=true&page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "listings"],
+              "query": [
+                { "key": "city", "value": "Monastir" },
+                { "key": "district", "value": "Sidi" },
+                { "key": "budgetMin", "value": "0" },
+                { "key": "budgetMax", "value": "500000" },
+                { "key": "genderRule", "value": "MIXED" },
+                { "key": "furnished", "value": "true" },
+                { "key": "chargesIncluded", "value": "false" },
+                { "key": "internetIncluded", "value": "true" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Rechercher avec période (startDate/endDate ensemble)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = new Date();",
+                  "const add = n => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);",
+                  "pm.collectionVariables.set('periodStart', add(10));",
+                  "pm.collectionVariables.set('periodEnd', add(19));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tenantToken}}", "type": "string" }] },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/listings?city=Monastir&startDate={{periodStart}}&endDate={{periodEnd}}&page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "listings"],
+              "query": [
+                { "key": "city", "value": "Monastir" },
+                { "key": "startDate", "value": "{{periodStart}}" },
+                { "key": "endDate", "value": "{{periodEnd}}" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Détail d'une annonce (adresse masquée si non propriétaire)",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tenantToken}}", "type": "string" }] },
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/listings/:id", "host": ["{{baseUrl}}"], "path": ["api", "v1", "listings", ":id"], "variable": [{ "key": "id", "value": "{{listingId}}" }] }
+          }
+        },
+        {
+          "name": "Modifier une annonce (OWNER propriétaire)",
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{ownerToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Studio campus Monastir — mis à jour\",\n  \"description\": \"Description mise à jour.\",\n  \"furnished\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/listings/:id", "host": ["{{baseUrl}}"], "path": ["api", "v1", "listings", ":id"], "variable": [{ "key": "id", "value": "{{listingId}}" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Réservations (Bookings)",
+      "item": [
+        {
+          "name": "Demander une réservation (TENANT) → bookingId",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const add = n => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);",
+                  "pm.collectionVariables.set('bookingStart', add(10));",
+                  "pm.collectionVariables.set('bookingEnd', add(19));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('bookingId', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tenantToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placeId\": {{placeId}},\n  \"startDate\": \"{{bookingStart}}\",\n  \"endDate\": \"{{bookingEnd}}\",\n  \"depositMillimes\": 50000\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/bookings", "host": ["{{baseUrl}}"], "path": ["api", "v1", "bookings"] }
+          }
+        },
+        {
+          "name": "Accepter la réservation (OWNER) : REQUESTED → ACCEPTED",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{ownerToken}}", "type": "string" }] },
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/bookings/:id/accept", "host": ["{{baseUrl}}"], "path": ["api", "v1", "bookings", ":id", "accept"], "variable": [{ "key": "id", "value": "{{bookingId}}" }] }
+          }
+        },
+        {
+          "name": "Passer en attente d'acompte (OWNER) : ACCEPTED → DEPOSIT_PENDING",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{ownerToken}}", "type": "string" }] },
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/bookings/:id/deposit-pending", "host": ["{{baseUrl}}"], "path": ["api", "v1", "bookings", ":id", "deposit-pending"], "variable": [{ "key": "id", "value": "{{bookingId}}" }] }
+          }
+        },
+        {
+          "name": "Confirmer après acompte (OWNER) : DEPOSIT_PENDING → CONFIRMED",
+          "description": "Appel normalement déclenché par la confirmation du paiement (POST /api/v1/payments/{id}/confirm). Le laisser ici pour tester la transition directe.",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{ownerToken}}", "type": "string" }] },
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/bookings/:id/confirm", "host": ["{{baseUrl}}"], "path": ["api", "v1", "bookings", ":id", "confirm"], "variable": [{ "key": "id", "value": "{{bookingId}}" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Visites",
+      "item": [
+        {
+          "name": "Demander une visite (TENANT) → visitId",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('visitDate', new Date(Date.now() + 2 * 86400000).toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('visitId', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tenantToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"listingId\": {{listingId}},\n  \"scheduledAt\": \"{{visitDate}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/visits", "host": ["{{baseUrl}}"], "path": ["api", "v1", "visits"] }
+          }
+        },
+        {
+          "name": "Confirmer la visite (OWNER) → proofCode",
+          "description": "Le code à 6 chiffres n'est renvoyé QUE par cet endpoint et est à usage unique.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  pm.collectionVariables.set('proofCode', pm.response.json().proofCode);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{ownerToken}}", "type": "string" }] },
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/visits/:id/confirm", "host": ["{{baseUrl}}"], "path": ["api", "v1", "visits", ":id", "confirm"], "variable": [{ "key": "id", "value": "{{visitId}}" }] }
+          }
+        },
+        {
+          "name": "Présenter le code de preuve (TENANT)",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tenantToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"proofCode\": \"{{proofCode}}\",\n  \"latitude\": 35.8,\n  \"longitude\": 10.6\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/visits/:id/proof", "host": ["{{baseUrl}}"], "path": ["api", "v1", "visits", ":id", "proof"], "variable": [{ "key": "id", "value": "{{visitId}}" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Paiements",
+      "item": [
+        {
+          "name": "Déclarer un acompte + preuve (TENANT, multipart) → paymentId",
+          "description": "En-tête Idempotency-Key obligatoire. Un replay avec la même clé renvoie la même réponse sans créer de second paiement.",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('paymentDeclKey', 'decl-' + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('paymentId', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tenantToken}}", "type": "string" }] },
+            "header": [
+              { "key": "Idempotency-Key", "value": "{{paymentDeclKey}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "bookingId", "type": "text", "value": "{{bookingId}}" },
+                { "key": "paymentType", "type": "text", "value": "DEPOSIT" },
+                { "key": "paymentMethod", "type": "text", "value": "D17" },
+                { "key": "amountMillimes", "type": "text", "value": "50000" },
+                { "key": "proof", "type": "file", "src": "{{proofFile}}" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/payments", "host": ["{{baseUrl}}"], "path": ["api", "v1", "payments"] }
+          }
+        },
+        {
+          "name": "Confirmer réception de l'acompte (OWNER, Idempotency-Key)",
+          "description": "Le paiement passe CONFIRMED et la réservation DEPOSIT_PENDING → CONFIRMED. Ne pas exécuter en doublon avec POST /api/v1/bookings/{id}/confirm.",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('paymentConfKey', 'conf-' + Date.now());"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{ownerToken}}", "type": "string" }] },
+            "header": [
+              { "key": "Idempotency-Key", "value": "{{paymentConfKey}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/v1/payments/:id/confirm", "host": ["{{baseUrl}}"], "path": ["api", "v1", "payments", ":id", "confirm"], "variable": [{ "key": "id", "value": "{{paymentId}}" }] }
+          }
+        },
+        {
+          "name": "Paiements d'une réservation (pagé)",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tenantToken}}", "type": "string" }] },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments/booking/{{bookingId}}?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "payments", "booking", "{{bookingId}}"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Messagerie",
+      "description": "WebSocket brut : ws://localhost:8082/ws/messages?token={{tenantToken}} puis trames JSON :\n{\"type\":\"SUBSCRIBE\",\"bookingId\":7} → {\"type\":\"SUBSCRIBED\",\"bookingId\":7}\n{\"type\":\"MESSAGE\",\"bookingId\":7,\"content\":\"Bonjour\"} → {\"type\":\"MESSAGE\",\"bookingId\":7,\"message\":{...}}\nPostman ne gère pas ce protocole de façon native dans cette collection : utilisez les endpoints REST ci-dessous (même serviceMessagingService). Le JWT peut aussi passer par l'en-tête Authorization: Bearer <access token> au handshake.",
+      "item": [
+        {
+          "name": "Envoyer un message (repli REST) — test du masquage de téléphone",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tenantToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingId\": {{bookingId}},\n  \"content\": \"Appelez +216 12 345 678 — merci !\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/messages", "host": ["{{baseUrl}}"], "path": ["api", "v1", "messages"] }
+          }
+        },
+        {
+          "name": "Historique des messages d'une réservation (pagé)",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tenantToken}}", "type": "string" }] },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/messages/booking/{{bookingId}}?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "messages", "booking", "{{bookingId}}"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Signalements",
+      "item": [
+        {
+          "name": "Signaler une annonce → auto-suspension après 3 signalants distincts",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tenantToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"listingId\": {{listingId}},\n  \"reason\": \"FAKE_LISTING\",\n  \"details\": \"Photos trompeuses et prix incohérent.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/reports", "host": ["{{baseUrl}}"], "path": ["api", "v1", "reports"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Administration (ADMIN)",
+      "item": [
+        {
+          "name": "File d'attente admin (annonces PENDING, signalements OPEN, paiements > 48 h)",
+          "description": "Onglet Auth : Bearer Token avec {{adminToken}} (ACCESS token du Login ADMIN). Si vous avez créé cette requête manuellement, elle hérite de {{tenantToken}} (vide) et renvoie 401 UNAUTHENTICATED : sélectionnez explicitement Bearer Token = {{adminToken}}.",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/queue", "host": ["{{baseUrl}}"], "path": ["api", "v1", "admin", "queue"] }
+          }
+        },
+        {
+          "name": "Valider une annonce → PUBLISHED",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/listings/:id/validate", "host": ["{{baseUrl}}"], "path": ["api", "v1", "admin", "listings", ":id", "validate"], "variable": [{ "key": "id", "value": "{{listingId}}" }] }
+          }
+        },
+        {
+          "name": "Refuser une annonce (motif obligatoire) → REFUSED",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Photos trompeuses\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/listings/:id/refuse", "host": ["{{baseUrl}}"], "path": ["api", "v1", "admin", "listings", ":id", "refuse"], "variable": [{ "key": "id", "value": "{{listingId}}" }] }
+          }
+        },
+        {
+          "name": "Journal d'audit (pagé)",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/audit?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "audit"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
